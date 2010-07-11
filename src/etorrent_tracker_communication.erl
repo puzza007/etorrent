@@ -301,8 +301,33 @@ decode_ips(Odd, Accum) ->
     error_logger:info_report([tracker_wrong_ip_decode, Odd]),
     Accum.
 
+decode_ips6(IPs) -> decode_ips6(IPs, []).
+
+decode_ips6(<<>>, Accum) -> Accum;
+decode_ips6(<<K1:16, K2:16, K3:16, K4:16, K5:16, K6:16, K7:16, K8:16, Port:16, Rest/binary>>,
+            Accum) ->
+        decode_ips6(Rest, [{{K1, K2, K3, K4, K5, K6, K7, K8}, Port} | Accum]);
+decode_ips6(Odd, Accum) ->
+    error_logger:info_report([tracker_wrong_ip6_decode, Odd]),
+    Accum.
 
 response_ips(BC) ->
+    V4Add = response_ips4(BC),
+    V6Add = response_ips6(BC),
+    case V6Add of
+        [] -> ignore;
+        [_|_] -> error_logger:info_report([ipv6_peers, V6Add])
+    end,
+    V4Add ++ V6Add.
+
+response_ips6(BC) ->
+    case etorrent_bcoding:search_dict_default({string, "peers6"}, BC, none) of
+        {string, Ips} ->
+            decode_ips6(list_to_binary(Ips));
+        none -> []
+    end.
+
+response_ips4(BC) ->
     case etorrent_bcoding:search_dict_default({string, "peers"}, BC, none) of
         {list, Ips} ->
             decode_ips(Ips);
