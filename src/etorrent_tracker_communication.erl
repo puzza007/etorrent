@@ -311,7 +311,13 @@ decode_ips6(Odd, Accum) ->
     Accum.
 
 response_ips(BC) ->
-    response_ips4(BC) ++ response_ips6(BC).
+    V4Add = response_ips4(BC),
+    V6Add = response_ips6(BC),
+    case V6Add of
+        [] -> ignore;
+        [_|_] -> error_logger:info_report([ipv6_peers, V6Add])
+    end,
+    V4Add ++ V6Add.
 
 response_ips6(BC) ->
     case etorrent_bcoding:search_dict_default({string, "peers6"}, BC, none) of
