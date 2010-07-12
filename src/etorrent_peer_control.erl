@@ -4,6 +4,7 @@
 
 -include("etorrent_rate.hrl").
 -include("types.hrl").
+-include("log.hrl").
 
 %% API
 -export([start_link/7, choke/1, unchoke/1, have/2, initialize/2,
@@ -193,7 +194,7 @@ handle_cast(try_queue_pieces, S) ->
 handle_cast(stop, S) ->
     {stop, normal, S};
 handle_cast(Msg, State) ->
-    error_logger:error_report([unknown_msg, Msg]),
+    ?WARN([unknown_msg, Msg]),
     {noreply, State}.
 
 
@@ -204,10 +205,10 @@ handle_cast(Msg, State) ->
 %% Description: Handling all non call/cast messages
 %%--------------------------------------------------------------------
 handle_info({tcp, _P, _Packet}, State) ->
-    error_logger:error_report([wrong_controller]),
+    ?ERR([wrong_controller]),
     {noreply, State};
 handle_info(Info, State) ->
-    error_logger:error_report([unknown_msg, Info]),
+    ?WARN([unknown_msg, Info]),
     {noreply, State}.
 
 %%--------------------------------------------------------------------
@@ -260,8 +261,7 @@ handle_message({cancel, Index, Offset, Len}, S) ->
     {ok, S};
 handle_message({have, PieceNum}, S) -> peer_have(PieceNum, S);
 handle_message({suggest, Idx}, S) ->
-    error_logger:info_report([{peer_id, S#state.remote_peer_id},
-                              {suggest, Idx}]),
+    ?INFO([{peer_id, S#state.remote_peer_id}, {suggest, Idx}]),
     {ok, S};
 handle_message(have_none, #state { piece_set = PS } = S) when PS =/= unknown ->
     {stop, normal, S};
@@ -314,7 +314,7 @@ handle_message({piece, Index, Offset, Data}, S) ->
     {ok, NS} = handle_got_chunk(Index, Offset, Data, size(Data), S),
     try_to_queue_up_pieces(NS);
 handle_message(Unknown, S) ->
-    error_logger:info_report([{unknown_message, Unknown}]),
+    ?WARN([unknown_message, Unknown]),
     {stop, normal, S}.
 
 %%--------------------------------------------------------------------
@@ -553,9 +553,9 @@ peer_seeds(Id, 0) ->
     end;
 peer_seeds(_Id, _N) -> ok.
 
-handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
+handle_call(Request, _From, State) ->
+    ?WARN([unknown_handle_call, Request]),
+    {noreply, State}.
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.

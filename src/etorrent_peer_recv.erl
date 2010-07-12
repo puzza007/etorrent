@@ -2,6 +2,7 @@
 -behaviour(gen_server).
 
 -include("etorrent_rate.hrl").
+-include("log.hrl").
 
 -export([start_link/3, cb_go_fast/1, cb_go_slow/1]).
 
@@ -111,7 +112,7 @@ handle_info(timeout, #state { controller = none, parent = Parent } = S) ->
 handle_info(timeout, S) ->
     Length =
         case S#state.mode of
-            fast -> error_logger:error_report([timeout_in_fast_mode]), 0;
+            fast -> ?ERR([timeout_in_fast_mode]), 0;
             slow -> 0;
             fast_setup ->
                 {val, L} = etorrent_proto_wire:remaining_bytes(S#state.packet_continuation),
@@ -147,14 +148,14 @@ handle_info({tcp, _P, Packet}, S) ->
     {ok, NS} = handle_packet(Packet, S),
     {noreply, NS};
 handle_info({tcp_closed, _P}, S) ->
-    error_logger:info_report(peer_closed_port),
+    ?INFO(peer_closed_port),
     {stop, normal, S};
 handle_info(Info, S) ->
-    error_logger:error_report([unknown_msg, Info]),
+    ?WARN([unknown_handle_info, Info]),
     next_msg(S).
 
 handle_cast(Msg, S) ->
-    error_logger:error_report([unknown_msg, Msg]),
+    ?WARN([unknown_handle_cast, Msg]),
     next_msg(S).
 
 handle_call(go_fast, _From, S) ->
@@ -163,7 +164,8 @@ handle_call(go_fast, _From, S) ->
 handle_call(go_slow, _From, S) ->
     ok = inet:setopts(S#state.socket, [{active, false}]),
     {reply, ok, S#state { mode = slow }};
-handle_call(_Request, _From, S) ->
+handle_call(Req, _From, S) ->
+    ?WARN([unknown_handle_call, Req]),
     next_msg(S).
 
 

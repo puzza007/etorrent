@@ -9,6 +9,7 @@
 -module(etorrent_tracker_communication).
 
 -behaviour(gen_server).
+-include("log.hrl").
 
 %% API
 -export([start_link/5]).
@@ -101,7 +102,7 @@ handle_cast(Msg, #state { hard_timer = none } = S) ->
     NS = contact_tracker(Msg, S),
     {noreply, NS};
 handle_cast(Msg, S) ->
-    error_logger:error_report([unknown_msg, Msg]),
+    ?ERR([unknown_msg, Msg]),
     {noreply, S}.
 
 %%--------------------------------------------------------------------
@@ -152,7 +153,7 @@ contact_tracker(S) ->
 
 contact_tracker(Event, S) ->
     NewUrl = build_tracker_url(S, Event),
-    error_logger:info_report([{contacting_tracker, NewUrl}]),
+    ?INFO([{contacting_tracker, NewUrl}]),
     case http_gzip:request(NewUrl) of
         {ok, {{_, 200, _}, _, Body}} ->
             handle_tracker_response(etorrent_bcoding:decode(Body), S);
@@ -163,7 +164,7 @@ contact_tracker(Event, S) ->
         {error, session_remotly_closed} ->
             handle_timeout(S);
         {error, Reason} ->
-            error_logger:error_report([contact_tracker_error, Reason]),
+            ?ERR([contact_tracker_error, Reason]),
             handle_timeout(S)
     end.
 
@@ -298,7 +299,7 @@ decode_ips(<<>>, Accum) ->
 decode_ips(<<B1:8, B2:8, B3:8, B4:8, Port:16/big, Rest/binary>>, Accum) ->
     decode_ips(Rest, [{{B1, B2, B3, B4}, Port} | Accum]);
 decode_ips(Odd, Accum) ->
-    error_logger:info_report([tracker_wrong_ip_decode, Odd]),
+    ?INFO([tracker_wrong_ip_decode, Odd]),
     Accum.
 
 decode_ips6(IPs) -> decode_ips6(IPs, []).
