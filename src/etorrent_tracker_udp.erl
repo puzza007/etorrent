@@ -12,9 +12,9 @@
 %%====================================================================
 
 %%====================================================================
-dispatch_incoming(TransactionID, InfoHashes, Packet) ->
+dispatch_incoming(ValidIDs, InfoHashes, Packet) ->
     <<Ty:32/big, TID:32/big, Rest/binary>> = Packet,
-    case TID == TransactionID of
+    case sets:is_element(TID, ValidIDs) of
 	true ->
 	    case Ty of
 		?CONNECT when byte_size(Packet) < 16 ->
@@ -39,6 +39,7 @@ dispatch_incoming(TransactionID, InfoHashes, Packet) ->
 	false ->
 	    {error, wrong_transaction_id}
     end.
+
 
 random_transaction_id() ->
     crypto:rand_bytes(4).
