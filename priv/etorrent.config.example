@@ -2,8 +2,9 @@
         [
          % The port entry tells etorrent which port it should listen on. It can currently not
          % be limited to listen on certain interfaces only. It will instead bind to every
-         % available interface present.
+         % available interface present. The UDP port parameter is for the UDP tracker.
          {port, 1729},
+	 {udp_port, 1729},
 
          % The directory to watch for .torrent files and the directory to download data into
          {dir, "/var/tmp/etorrent"},
