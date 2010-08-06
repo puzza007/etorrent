@@ -29,7 +29,7 @@ add_hashes(IODev, PH) ->
 
 cut_chunk({Bin, Hashes}) when byte_size(Bin) >= ?CHUNKSIZE ->
     <<Chunk:?CHUNKSIZE/binary, Rest/binary>> = Bin,
-    cut_chunk({Rest, [crypto:sha(Chunk) | Hashes]});
+    cut_chunk({Rest, [rpc:async_call(node(), crypto, sha, [Chunk]) | Hashes]});
 cut_chunk(Otherwise) -> Otherwise.
 
 hash(IODev, eof, PH) ->
@@ -47,13 +47,14 @@ read_and_hash(Arg) ->
 	    true = filelib:is_regular(Arg),
 	    hash_file(Arg, Empty)
     end,
-    finish_hash(PH).
+    {Keys, FIs} = finish_hash(PH),
+    {iolist_to_binary([rpc:yield(K) || K <- Keys]), FIs}.
 
-finish_hash({{<<>>, Hashes}, FI}) -> {iolist_to_binary(lists:reverse(Hashes)),
+finish_hash({{<<>>, Hashes}, FI}) -> {lists:reverse(Hashes),
 				      lists:reverse(FI)};
 finish_hash({{Bin, Hashes}, FI}) ->
     H = crypto:sha(Bin),
-    {iolist_to_binary(lists:reverse([H | Hashes])),
+    {lists:reverse([H | Hashes]),
      lists:reverse(FI)}.
 
 mk_comment(null) -> [];
