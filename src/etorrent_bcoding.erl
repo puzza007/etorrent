@@ -83,9 +83,12 @@ parse(File) ->
 %%====================================================================
 
 %% Encode a string.
-encode_string(Str) ->
+encode_string(Bin) when is_binary(Bin) ->
+    S = byte_size(Bin),
+    [integer_to_list(S), ":", Bin];
+encode_string(Str) when is_list(Str) ->
     L = length(Str),
-    lists:concat([L, ':', Str]).
+    lists:concat([integer_to_list(L), ':', Str]).
 
 encode_integer(Int) ->
     lists:concat(['i', Int, 'e']).
