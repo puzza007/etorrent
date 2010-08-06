@@ -21,6 +21,7 @@
      etorrent_webui,
      etorrent_tracker_udp,
      etorrent_udp_tracker_mgr
+     etorrent_mktorrent
  ]},
  {registered,
  [
