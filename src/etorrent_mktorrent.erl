@@ -2,6 +2,7 @@
 
 -include_lib("kernel/include/file.hrl").
 -include("log.hrl").
+-include("types.hrl").
 %% API
 -export([mktorrent/3]).
 
@@ -22,10 +23,7 @@ hash_file(File, {PH, InfoBlocks}) ->
     {PHUpdate, [IB | InfoBlocks]}.
 
 add_hashes(IODev, PH) ->
-    PH2 = hash(IODev, file:read(IODev, ?CHUNKSIZE), PH),
-    {_, H} = PH2,
-    0 = length(H) rem 20,
-    PH2.
+    hash(IODev, file:read(IODev, ?CHUNKSIZE), PH).
 
 cut_chunk({Bin, Hashes}) when byte_size(Bin) >= ?CHUNKSIZE ->
     <<Chunk:?CHUNKSIZE/binary, Rest/binary>> = Bin,
@@ -53,8 +51,8 @@ read_and_hash(Arg) ->
 finish_hash({{<<>>, Hashes}, FI}) -> {lists:reverse(Hashes),
 				      lists:reverse(FI)};
 finish_hash({{Bin, Hashes}, FI}) ->
-    H = crypto:sha(Bin),
-    {lists:reverse([H | Hashes]),
+    K = rpc:async_call(node(), crypto, sha, [Bin]),
+    {lists:reverse([K | Hashes]),
      lists:reverse(FI)}.
 
 mk_comment(null) -> [];
