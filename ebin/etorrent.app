@@ -20,7 +20,7 @@
      etorrent_t_sup, etorrent_utils, http_gzip, etorrent_fs_janitor,
      etorrent_webui,
      etorrent_tracker_udp,
-     etorrent_udp_tracker_mgr
+     etorrent_udp_tracker_mgr,
      etorrent_mktorrent
  ]},
  {registered,
